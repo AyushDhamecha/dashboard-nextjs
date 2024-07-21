@@ -1,13 +1,10 @@
 import bcrypt from 'bcrypt';
-import { createPool, VercelPoolClient } from '@vercel/postgres';
+import { db } from '@vercel/postgres';
 import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 
-// Create a pool using createPool
-const pool = createPool({
-  connectionString: process.env.POSTGRES_URL, // Use the pooled connection string here
-});
+const client = await db.connect();
 
-async function seedUsers(client: VercelPoolClient) {
+async function seedUsers() {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
   await client.sql`
     CREATE TABLE IF NOT EXISTS users (
@@ -32,7 +29,7 @@ async function seedUsers(client: VercelPoolClient) {
   return insertedUsers;
 }
 
-async function seedInvoices(client: VercelPoolClient) {
+async function seedInvoices() {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
   await client.sql`
@@ -58,7 +55,7 @@ async function seedInvoices(client: VercelPoolClient) {
   return insertedInvoices;
 }
 
-async function seedCustomers(client: VercelPoolClient) {
+async function seedCustomers() {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
   await client.sql`
@@ -83,7 +80,7 @@ async function seedCustomers(client: VercelPoolClient) {
   return insertedCustomers;
 }
 
-async function seedRevenue(client: VercelPoolClient) {
+async function seedRevenue() {
   await client.sql`
     CREATE TABLE IF NOT EXISTS revenue (
       month VARCHAR(4) NOT NULL UNIQUE,
@@ -105,21 +102,21 @@ async function seedRevenue(client: VercelPoolClient) {
 }
 
 export async function GET() {
-  const client = await pool.connect();
-
+  // return Response.json({
+  //   message:
+  //     'Uncomment this file and remove this line. You can delete this file when you are finished.',
+  // });
   try {
     await client.sql`BEGIN`;
-    await seedUsers(client);
-    await seedCustomers(client);
-    await seedInvoices(client);
-    await seedRevenue(client);
+    await seedUsers();
+    await seedCustomers();
+    await seedInvoices();
+    await seedRevenue();
     await client.sql`COMMIT`;
 
-    return new Response(JSON.stringify({ message: 'Database seeded successfully' }), { status: 200 });
+    return Response.json({ message: 'Database seeded successfully' });
   } catch (error) {
     await client.sql`ROLLBACK`;
-    return new Response(JSON.stringify({ error:onmessage }), { status: 500 });
-  } finally {
-    client.release();
+    return Response.json({ error }, { status: 500 });
   }
 }

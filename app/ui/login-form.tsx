@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
 import { lusitana } from '@/app/ui/fonts';
 import {
   AtSymbolIcon,
@@ -9,38 +8,19 @@ import {
 } from '@heroicons/react/24/outline';
 import { ArrowRightIcon } from '@heroicons/react/20/solid';
 import { Button } from './button';
-import { authenticate } from '@/app/lib/actions';
+// import { signIn } from "@/auth";
+// import { AuthError } from "next-auth";
+import { useActionState } from "react";
+import { authenticate } from "@/app/lib/actions";
 
 export default function LoginForm() {
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isPending, setIsPending] = useState(false);
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsPending(true);
-    const formData = new FormData(event.currentTarget);
-
-    console.log('Form data:', {
-      email: formData.get('email'),
-      password: formData.get('password'),
-    });
-
-    try {
-      await authenticate(formData);
-      // Redirect to the dashboard after successful authentication
-      if (typeof window !== 'undefined') {
-        window.location.href = '/dashboard';
-      }
-    } catch (error: any) {
-      console.error('Authentication error:', error);
-      setErrorMessage(error.message || 'Authentication failed.');
-    } finally {
-      setIsPending(false);
-    }
-  };
+  const [errorMessage, formAction, isPending] = useActionState(
+    authenticate,
+    undefined
+  );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form action={formAction} className="space-y-3">
       <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
         <h1 className={`${lusitana.className} mb-3 text-2xl`}>
           Please log in to continue.
@@ -94,6 +74,7 @@ export default function LoginForm() {
           aria-live="polite"
           aria-atomic="true"
         >
+          {/* Add form errors here */}
           {errorMessage && (
             <>
               <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
